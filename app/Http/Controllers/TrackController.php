@@ -4,109 +4,62 @@ namespace App\Http\Controllers;
 
 use App\Models\Track;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
-use App\Models\Course;
 
 class TrackController extends Controller
 {
-    public function index()
+    public function __construct()
     {
-        $tracks = Track::all();
-        return view('tracks.index', compact('tracks'));
+        $this->middleware('auth:sanctum');
     }
 
-
+    public function index()
+    {
+        return response()->json([
+            'tracks' => Track::all()
+        ]);
+    }
 
     public function show($id)
     {
-        $track = Track::findOrFail($id);
-        return view('tracks.show', compact('track'));
-    }
+        $track = Track::find($id);
 
-
-
-    public function destroy($id)
-    {
-        $track = Track::findOrFail($id);
-
-        // Delete the image if stored
-        if ($track->img && Storage::exists('public/images/' . $track->img)) {
-            Storage::delete('public/images/' . $track->img);
+        if (!$track) {
+            return response()->json(['message' => 'Track not found'], 404);
         }
 
-        $track->delete();
-        return redirect('/tracks')->with('success', 'Track deleted successfully!');
+        return response()->json(['track' => $track]);
     }
 
-
-
-    public function edit($id)
+    public function store(Request $request)
     {
-        $track = Track::findOrFail($id);
-        return view('tracks.edit', compact('track'));
+        $track = Track::create($request->all());
+
+        return response()->json(['track' => $track], 201);
     }
-
-
 
     public function update(Request $request, $id)
     {
-        $track = Track::findOrFail($id);
+        $track = Track::find($id);
 
-        $request->validate([
-            'name' => 'required|string|max:255',
-            'description' => 'nullable|string',
-            'img' => 'nullable|image|max:2048' // allow image upload (optional)
-        ]);
-
-        $data = $request->only(['name', 'description']);
-
-        if ($request->hasFile('img')) {
-            // Delete old image if it exists
-            if ($track->img && Storage::exists('public/images/' . $track->img)) {
-                Storage::delete('public/images/' . $track->img);
-            }
-
-            $imageName = time() . '.' . $request->img->extension();
-            $request->img->storeAs('public/images', $imageName);
-            $data['img'] = $imageName;
+        if (!$track) {
+            return response()->json(['message' => 'Track not found'], 404);
         }
 
-        $track->update($data);
+        $track->update($request->all());
 
-        return redirect()->route('tracks.show', $track->id)->with('success', 'Track updated successfully!');
+        return response()->json(['track' => $track]);
     }
 
-
-    public function create()
+    public function destroy($id)
     {
-        $courses = Course::all();
-        return view('tracks.create', compact('courses'));
+        $track = Track::find($id);
+
+        if (!$track) {
+            return response()->json(['message' => 'Track not found'], 404);
+        }
+
+        $track->delete();
+
+        return response()->json(['message' => 'Track deleted']);
     }
-
-
-    
-    public function store(Request $request)
-{
-    $validated = $request->validate([
-        'name' => 'required|string',
-        'description' => 'required|string',
-        'img' => 'nullable|image',
-        'course_id' => 'required|exists:courses,id', // 👈 validate this
-    ]);
-
-    if ($request->hasFile('img')) {
-        $image = $request->file('img');
-        $imageName = time() . '.' . $image->getClientOriginalExtension();
-        $image->move(public_path('uploads/tracks'), $imageName);
-        $validated['img'] = $imageName;
-    } else {
-        $validated['img'] = 'default.png';
-    }
-
-    Track::create($validated);
-
-    return redirect()->route('tracks.index')->with('success', 'Track created successfully.');
-}
-
-
 }

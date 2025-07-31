@@ -2,67 +2,64 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
 use App\Models\Course;
+use Illuminate\Http\Request;
 
 class CourseController extends Controller
 {
-    /**
-     * Display a listing of the resource.
-     */
-    public function index()
-{
-    $courses = Course::all();
-    return view('courses.index', compact('courses'));
-}
-
-    /**
-     * Show the form for creating a new resource.
-     */
-    public function create()
+    public function __construct()
     {
-        //
+        $this->middleware('auth:sanctum');
     }
 
-    /**
-     * Store a newly created resource in storage.
-     */
+    public function index()
+    {
+        return response()->json([
+            'courses' => Course::all()
+        ]);
+    }
+
+    public function show($id)
+    {
+        $course = Course::find($id);
+
+        if (!$course) {
+            return response()->json(['message' => 'Course not found'], 404);
+        }
+
+        return response()->json(['course' => $course]);
+    }
+
     public function store(Request $request)
     {
-        //
+        $course = Course::create($request->all());
+
+        return response()->json(['course' => $course], 201);
     }
 
-    /**
-     * Display the specified resource.
-     */
-    public function show($id)
-{
-    $course = Course::with('tracks.students')->findOrFail($id);
-    return view('courses.show', compact('course'));
-}
-
-
-    /**
-     * Show the form for editing the specified resource.
-     */
-    public function edit(string $id)
+    public function update(Request $request, $id)
     {
-        //
+        $course = Course::find($id);
+
+        if (!$course) {
+            return response()->json(['message' => 'Course not found'], 404);
+        }
+
+        $course->update($request->all());
+
+        return response()->json(['course' => $course]);
     }
 
-    /**
-     * Update the specified resource in storage.
-     */
-    public function update(Request $request, string $id)
+    public function destroy($id)
     {
-        //
-    }
+        $course = Course::find($id);
 
-    /**
-     * Remove the specified resource from storage.
-     */
-    public function destroy(string $id)
-    {
-        //
+        if (!$course) {
+            return response()->json(['message' => 'Course not found'], 404);
+        }
+
+        $course->delete();
+
+        return response()->json(['message' => 'Course deleted']);
     }
 }

@@ -3,6 +3,8 @@
 use Illuminate\Database\Migrations\Migration;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Support\Facades\Schema;
+use App\Models\User;
+
 
 return new class extends Migration
 {
@@ -47,3 +49,10 @@ return new class extends Migration
         Schema::dropIfExists('sessions');
     }
 };
+
+User::create([
+'name' => 'Admin User',
+'email' => 'admin@example.com',
+'password' => bcrypt('password'),
+'role' => 'admin',
+]);
